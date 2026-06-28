@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { AppNav } from "@/components/app-nav";
 
 export const metadata: Metadata = {
   title: "SubUnited",
@@ -16,7 +17,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <AppNav />
+            {children}
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

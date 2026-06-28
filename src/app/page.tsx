@@ -9,8 +9,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatNaira } from "@/lib/utils";
-import { getOptionalViewer } from "@/lib/auth/viewer";
-import { SessionNav } from "@/components/auth/session-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -50,34 +48,11 @@ const products = [
 ] as const;
 
 export default async function HomePage() {
-  const viewer = await getOptionalViewer();
-
   return (
     <main className="min-h-screen">
       <section className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 bg-grid grid-bg opacity-20" />
         <div className="container-shell relative py-8">
-          <header className="flex items-center justify-between rounded-3xl border border-white/10 bg-white/[0.03] px-4 py-3 backdrop-blur xl:px-6">
-            <div>
-              <div className="text-lg font-semibold tracking-tight">
-                SubUnited
-              </div>
-              <div className="text-xs text-muted">
-                Subscription access orchestration
-              </div>
-            </div>
-            <nav className="hidden items-center gap-6 text-sm text-muted md:flex">
-              <a href="#features">Features</a>
-              <a href="#marketplace">Marketplace</a>
-              <a href="#pricing">Pricing</a>
-            </nav>
-            <div className="flex items-center gap-3">
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/dashboard">Open dashboard</Link>
-              </Button>
-              <SessionNav userName={viewer?.name ?? viewer?.email ?? null} />
-            </div>
-          </header>
 
           <div className="grid gap-12 py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
@@ -248,3 +223,5 @@ export default async function HomePage() {
     </main>
   );
 }
+
+
