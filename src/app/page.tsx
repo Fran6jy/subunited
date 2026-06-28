@@ -1,7 +1,18 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Zap, Wallet, Sparkles, LayoutDashboard } from "lucide-react";
+import {
+  ArrowRight,
+  ShieldCheck,
+  Zap,
+  Wallet,
+  Sparkles,
+  LayoutDashboard,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatNaira } from "@/lib/utils";
+import { getOptionalViewer } from "@/lib/auth/viewer";
+import { SessionNav } from "@/components/auth/session-nav";
+
+export const dynamic = "force-dynamic";
 
 const stats = [
   { label: "Automated fulfillment", value: "99.9%" },
@@ -13,17 +24,20 @@ const stats = [
 const features = [
   {
     title: "Instant access orchestration",
-    description: "Automatically assign credentials, unlock dashboards, and manage subscription lifecycles without manual fulfillment.",
+    description:
+      "Automatically assign credentials, unlock dashboards, and manage subscription lifecycles without manual fulfillment.",
     icon: Zap,
   },
   {
     title: "Enterprise-grade security",
-    description: "AES-256-GCM encryption, strong session handling, audit logging, scoped roles, and resilient webhook processing.",
+    description:
+      "AES-256-GCM encryption, strong session handling, audit logging, scoped roles, and resilient webhook processing.",
     icon: ShieldCheck,
   },
   {
     title: "Wallets, renewals, and billing",
-    description: "Track wallets, renewal windows, invoices, and recurring product usage with a premium customer experience.",
+    description:
+      "Track wallets, renewal windows, invoices, and recurring product usage with a premium customer experience.",
     icon: Wallet,
   },
 ];
@@ -35,7 +49,9 @@ const products = [
   ["NordVPN", 290000],
 ] as const;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const viewer = await getOptionalViewer();
+
   return (
     <main className="min-h-screen">
       <section className="relative overflow-hidden border-b border-white/10">
@@ -43,8 +59,12 @@ export default function HomePage() {
         <div className="container-shell relative py-8">
           <header className="flex items-center justify-between rounded-3xl border border-white/10 bg-white/[0.03] px-4 py-3 backdrop-blur xl:px-6">
             <div>
-              <div className="text-lg font-semibold tracking-tight">SubUnited</div>
-              <div className="text-xs text-muted">Subscription access orchestration</div>
+              <div className="text-lg font-semibold tracking-tight">
+                SubUnited
+              </div>
+              <div className="text-xs text-muted">
+                Subscription access orchestration
+              </div>
             </div>
             <nav className="hidden items-center gap-6 text-sm text-muted md:flex">
               <a href="#features">Features</a>
@@ -53,11 +73,9 @@ export default function HomePage() {
             </nav>
             <div className="flex items-center gap-3">
               <Button asChild variant="ghost" size="sm">
-                <Link href="/login">Sign in</Link>
-              </Button>
-              <Button asChild size="sm">
                 <Link href="/dashboard">Open dashboard</Link>
               </Button>
+              <SessionNav userName={viewer?.name ?? viewer?.email ?? null} />
             </div>
           </header>
 
@@ -71,7 +89,9 @@ export default function HomePage() {
                 Premium subscription commerce with instant, secure delivery.
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">
-                SubUnited automates product discovery, payment verification, credential assignment, OTP workflows, renewals, and customer access from one elegant platform.
+                SubUnited automates product discovery, payment verification,
+                credential assignment, OTP workflows, renewals, and customer
+                access from one elegant platform.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
@@ -99,21 +119,32 @@ export default function HomePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm text-muted">Customer dashboard</div>
-                    <div className="text-2xl font-semibold">Active subscriptions</div>
+                    <div className="text-2xl font-semibold">
+                      Active subscriptions
+                    </div>
                   </div>
-                  <div className="rounded-2xl bg-emerald-400/10 px-3 py-2 text-sm text-emerald-300">All systems healthy</div>
+                  <div className="rounded-2xl bg-emerald-400/10 px-3 py-2 text-sm text-emerald-300">
+                    All systems healthy
+                  </div>
                 </div>
 
                 <div className="mt-6 grid gap-4">
                   {products.map(([name, amount]) => (
-                    <div key={name} className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+                    <div
+                      key={name}
+                      className="rounded-3xl border border-white/10 bg-white/[0.03] p-4"
+                    >
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <div className="font-medium">{name}</div>
-                          <div className="text-sm text-muted">Credential ready • OTP enabled • Renewal available</div>
+                          <div className="text-sm text-muted">
+                            Credential ready • OTP enabled • Renewal available
+                          </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-semibold">{formatNaira(amount)}</div>
+                          <div className="font-semibold">
+                            {formatNaira(amount)}
+                          </div>
                           <div className="text-sm text-emerald-300">Active</div>
                         </div>
                       </div>
@@ -143,19 +174,28 @@ export default function HomePage() {
 
       <section id="features" className="container-shell py-20">
         <div className="mb-10 max-w-2xl">
-          <div className="mb-3 text-sm uppercase tracking-[0.2em] text-muted">Why SubUnited</div>
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Automation, reliability, and a first-class buyer experience.</h2>
+          <div className="mb-3 text-sm uppercase tracking-[0.2em] text-muted">
+            Why SubUnited
+          </div>
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            Automation, reliability, and a first-class buyer experience.
+          </h2>
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
           {features.map((feature) => {
             const Icon = feature.icon;
             return (
-              <div key={feature.title} className="glass-card rounded-[28px] p-6">
+              <div
+                key={feature.title}
+                className="glass-card rounded-[28px] p-6"
+              >
                 <div className="mb-5 inline-flex rounded-2xl border border-white/10 p-3 text-primary">
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="text-xl font-semibold">{feature.title}</h3>
-                <p className="mt-3 leading-7 text-muted">{feature.description}</p>
+                <p className="mt-3 leading-7 text-muted">
+                  {feature.description}
+                </p>
               </div>
             );
           })}
@@ -166,8 +206,12 @@ export default function HomePage() {
         <div className="glass-card rounded-[32px] p-6 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-sm uppercase tracking-[0.2em] text-muted">Marketplace</div>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight">Curated digital access categories</h2>
+              <div className="text-sm uppercase tracking-[0.2em] text-muted">
+                Marketplace
+              </div>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight">
+                Curated digital access categories
+              </h2>
             </div>
             <Button asChild variant="secondary">
               <Link href="/marketplace">Browse all listings</Link>
@@ -184,13 +228,17 @@ export default function HomePage() {
               "Productivity",
               "Creator Tools",
             ].map((category) => (
-              <div key={category} className="rounded-3xl border border-white/10 bg-black/20 p-5">
+              <div
+                key={category}
+                className="rounded-3xl border border-white/10 bg-black/20 p-5"
+              >
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{category}</div>
                   <LayoutDashboard className="h-4 w-4 text-muted" />
                 </div>
                 <div className="mt-3 text-sm leading-6 text-muted">
-                  Discover verified subscription products, transparent pricing, and automated delivery.
+                  Discover verified subscription products, transparent pricing,
+                  and automated delivery.
                 </div>
               </div>
             ))}

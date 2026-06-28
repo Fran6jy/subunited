@@ -1,10 +1,19 @@
 import { formatDistanceToNowStrict } from "date-fns";
 import { formatNaira } from "@/lib/utils";
 import type { getDashboardData } from "@/lib/services/dashboard";
+import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
-export function DashboardShell({ data, customerName }: { data: DashboardData; customerName: string }) {
+export function DashboardShell({
+  data,
+  customerName,
+  userId,
+}: {
+  data: DashboardData;
+  customerName: string;
+  userId: string;
+}) {
   const cards = [
     {
       title: "Wallet Balance",
@@ -32,9 +41,16 @@ export function DashboardShell({ data, customerName }: { data: DashboardData; cu
     <main className="container-shell min-h-screen py-10">
       <div className="mb-8 flex items-end justify-between gap-4">
         <div>
-          <div className="text-sm uppercase tracking-[0.2em] text-muted">Dashboard</div>
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight">Welcome back, {customerName}</h1>
-          <p className="mt-3 text-muted">Manage access, renew subscriptions, reveal credentials, and monitor activity in real time.</p>
+          <div className="text-sm uppercase tracking-[0.2em] text-muted">
+            Dashboard
+          </div>
+          <h1 className="mt-2 text-4xl font-semibold tracking-tight">
+            Welcome back, {customerName}
+          </h1>
+          <p className="mt-3 text-muted">
+            Manage access, renew subscriptions, reveal credentials, and monitor
+            activity in real time.
+          </p>
         </div>
       </div>
 
@@ -42,7 +58,9 @@ export function DashboardShell({ data, customerName }: { data: DashboardData; cu
         {cards.map((card) => (
           <div key={card.title} className="glass-card rounded-[28px] p-5">
             <div className="text-sm text-muted">{card.title}</div>
-            <div className="mt-3 text-3xl font-semibold tracking-tight">{card.value}</div>
+            <div className="mt-3 text-3xl font-semibold tracking-tight">
+              {card.value}
+            </div>
             <div className="mt-2 text-sm text-muted">{card.helper}</div>
           </div>
         ))}
@@ -54,11 +72,15 @@ export function DashboardShell({ data, customerName }: { data: DashboardData; cu
           <div className="mt-5 space-y-4">
             {data.purchases.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-white/10 p-6 text-sm text-muted">
-                No subscriptions yet. Your purchases will appear here after payment and activation.
+                No subscriptions yet. Your purchases will appear here after
+                payment and activation.
               </div>
             ) : (
               data.purchases.map((purchase) => (
-                <div key={purchase.id} className="rounded-3xl border border-white/10 p-4">
+                <div
+                  key={purchase.id}
+                  className="rounded-3xl border border-white/10 p-4"
+                >
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <div className="font-medium">{purchase.product.name}</div>
@@ -72,6 +94,7 @@ export function DashboardShell({ data, customerName }: { data: DashboardData; cu
                       {purchase.status}
                     </div>
                   </div>
+                  <DashboardActions purchaseId={purchase.id} userId={userId} />
                 </div>
               ))
             )}
@@ -82,11 +105,18 @@ export function DashboardShell({ data, customerName }: { data: DashboardData; cu
           <h2 className="text-xl font-semibold">Recent notifications</h2>
           <div className="mt-5 space-y-4 text-sm text-muted">
             {data.notifications.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-white/10 p-4">No notifications yet.</div>
+              <div className="rounded-3xl border border-dashed border-white/10 p-4">
+                No notifications yet.
+              </div>
             ) : (
               data.notifications.map((notification) => (
-                <div key={notification.id} className="rounded-3xl border border-white/10 p-4">
-                  <div className="font-medium text-foreground">{notification.title}</div>
+                <div
+                  key={notification.id}
+                  className="rounded-3xl border border-white/10 p-4"
+                >
+                  <div className="font-medium text-foreground">
+                    {notification.title}
+                  </div>
                   <div className="mt-1">{notification.message}</div>
                 </div>
               ))

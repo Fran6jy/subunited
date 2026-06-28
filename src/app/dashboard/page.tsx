@@ -14,6 +14,7 @@ export default async function DashboardPage() {
       <DashboardShell
         data={data}
         customerName={user.name ?? user.email.split("@")[0]}
+        userId={user.id}
       />
     );
   } catch (error) {

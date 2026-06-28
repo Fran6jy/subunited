@@ -3,7 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/db/prisma";
 import { getEnv } from "@/lib/env/server";
 
-export function createAuth() {
+function createAuthInstance() {
   const env = getEnv();
 
   return betterAuth({
@@ -14,8 +14,22 @@ export function createAuth() {
     }),
     emailAndPassword: {
       enabled: true,
+      requireEmailVerification: false,
     },
-    socialProviders: {},
+    session: {
+      expiresIn: 60 * 60 * 24 * 7,
+      updateAge: 60 * 60 * 24,
+    },
     trustedOrigins: [env.APP_URL],
   });
+}
+
+let authInstance: ReturnType<typeof createAuthInstance> | undefined;
+
+export function getAuth() {
+  if (!authInstance) {
+    authInstance = createAuthInstance();
+  }
+
+  return authInstance;
 }
