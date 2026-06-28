@@ -1,0 +1,520 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  SUPPORT
+  MODERATOR
+  ADMIN
+}
+
+enum RecordStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+  DELETED
+}
+
+enum ProductVisibility {
+  PUBLIC
+  PRIVATE
+  UNLISTED
+}
+
+enum CredentialStatus {
+  AVAILABLE
+  ASSIGNED
+  SUSPENDED
+  EXPIRED
+}
+
+enum PurchaseStatus {
+  PENDING
+  PROCESSING
+  PAID
+  ACTIVE
+  EXPIRED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  REVERSED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  PAYSTACK
+  MONNIFY
+  WALLET
+}
+
+enum NotificationChannel {
+  EMAIL
+  BROWSER
+  IN_APP
+  WEBHOOK
+}
+
+enum SupportTicketStatus {
+  OPEN
+  PENDING
+  RESOLVED
+  CLOSED
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  DEAD_LETTER
+}
+
+model User {
+  id                String           @id @default(uuid())
+  email             String           @unique
+  emailVerified     Boolean          @default(false)
+  name              String?
+  image             String?
+  passwordHash      String?
+  role              UserRole         @default(CUSTOMER)
+  referralCode      String?          @unique
+  referredById      String?
+  twoFactorEnabled  Boolean          @default(false)
+  trustedDeviceKey  String?
+  deletedAt         DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  referredBy        User?            @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals         User[]           @relation("UserReferrals")
+  sessions          Session[]
+  refreshTokens     RefreshToken[]
+  emailOtps         EmailOTP[]
+  wallets           Wallet[]
+  purchases         Purchase[]
+  notifications     Notification[]
+  supportTickets    SupportTicket[]
+  auditLogs         AuditLog[]
+  activities        ActivityLog[]
+  credentials       Credential[]
+  otpSecrets        OTPSecret[]
+  referralsEarned   Referral[]       @relation("ReferralOwner")
+  referralsCreated  Referral[]       @relation("ReferralReferred")
+
+  @@index([role])
+  @@index([deletedAt])
+}
+
+model Category {
+  id          String                @id @default(uuid())
+  name        String                @unique
+  slug        String                @unique
+  description String?
+  status      RecordStatus          @default(ACTIVE)
+  deletedAt   DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  products    SubscriptionProduct[]
+
+  @@index([slug])
+  @@index([deletedAt])
+}
+
+model SubscriptionProduct {
+  id                    String            @id @default(uuid())
+  name                  String
+  slug                  String            @unique
+  description           String            @db.Text
+  categoryId            String
+  thumbnail             String?
+  gallery               String[]
+  monthlyPriceKobo      Int
+  quarterlyPriceKobo    Int?
+  annualPriceKobo       Int?
+  status                RecordStatus      @default(ACTIVE)
+  visibility            ProductVisibility @default(PUBLIC)
+  maxConcurrentUsers    Int               @default(1)
+  requiresOtp           Boolean           @default(false)
+  requiresEmailOtp      Boolean           @default(false)
+  requiresCredentials   Boolean           @default(true)
+  popularityScore       Float             @default(0)
+  metadata              Json?
+  seo                   Json?
+  tags                  String[]
+  deletedAt             DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  category              Category          @relation(fields: [categoryId], references: [id])
+  credentialPools       CredentialPool[]
+  purchases             Purchase[]
+  coupons               Coupon[]
+  renewals              Renewal[]
+
+  @@index([categoryId])
+  @@index([status, visibility])
+  @@index([deletedAt])
+}
+
+model CredentialPool {
+  id                String                @id @default(uuid())
+  productId         String
+  name              String
+  provider          String?
+  status            RecordStatus          @default(ACTIVE)
+  deletedAt         DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  product           SubscriptionProduct   @relation(fields: [productId], references: [id])
+  credentials       Credential[]
+
+  @@index([productId])
+  @@index([deletedAt])
+}
+
+model Credential {
+  id                  String           @id @default(uuid())
+  poolId              String
+  email               String
+  encryptedPassword   String
+  recoveryEmail       String?
+  recoveryPhone       String?
+  notes               String?
+  encryptedOtpSecret  String?
+  assignedUserId      String?
+  status              CredentialStatus @default(AVAILABLE)
+  lastRotationAt      DateTime?
+  lastLoginAt         DateTime?
+  provider            String?
+  deviceLimit         Int?
+  healthScore         Float            @default(100)
+  deletedAt           DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  pool                CredentialPool   @relation(fields: [poolId], references: [id])
+  assignedUser        User?            @relation(fields: [assignedUserId], references: [id])
+  purchases           Purchase[]
+
+  @@index([poolId])
+  @@index([assignedUserId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model OTPSecret {
+  id            String    @id @default(uuid())
+  userId        String
+  productId      String?
+  encryptedValue String
+  label         String?
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model Purchase {
+  id                  String               @id @default(uuid())
+  userId              String
+  productId           String
+  credentialId        String?
+  status              PurchaseStatus       @default(PENDING)
+  pricePaidKobo       Int
+  expiresAt           DateTime?
+  activatedAt         DateTime?
+  deletedAt           DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  user                User                 @relation(fields: [userId], references: [id])
+  product             SubscriptionProduct  @relation(fields: [productId], references: [id])
+  credential          Credential?          @relation(fields: [credentialId], references: [id])
+  payments            Payment[]
+  renewals            Renewal[]
+
+  @@index([userId])
+  @@index([productId])
+  @@index([credentialId])
+  @@index([status, expiresAt])
+  @@index([deletedAt])
+}
+
+model Payment {
+  id                    String           @id @default(uuid())
+  purchaseId            String?
+  provider              PaymentProvider
+  providerReference     String           @unique
+  status                PaymentStatus    @default(PENDING)
+  amountKobo            Int
+  currency              String           @default("NGN")
+  metadata              Json?
+  verifiedAt            DateTime?
+  deletedAt             DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  purchase              Purchase?        @relation(fields: [purchaseId], references: [id])
+
+  @@index([purchaseId])
+  @@index([provider, status])
+  @@index([deletedAt])
+}
+
+model WebhookEvent {
+  id               String       @id @default(uuid())
+  provider         PaymentProvider
+  eventType        String
+  signature        String?
+  payload          Json
+  processedAt      DateTime?
+  status           RecordStatus @default(ACTIVE)
+  deletedAt        DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([provider, eventType])
+  @@index([processedAt])
+  @@index([deletedAt])
+}
+
+model Wallet {
+  id                String       @id @default(uuid())
+  userId            String
+  balanceKobo       Int          @default(0)
+  ledger            Json?
+  deletedAt         DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  user              User         @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model Coupon {
+  id                String               @id @default(uuid())
+  code              String               @unique
+  productId         String?
+  discountPercent   Int?
+  discountKobo      Int?
+  maxRedemptions    Int?
+  redeemedCount     Int                  @default(0)
+  expiresAt         DateTime?
+  status            RecordStatus         @default(ACTIVE)
+  deletedAt         DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  product           SubscriptionProduct? @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@index([code])
+  @@index([deletedAt])
+}
+
+model Referral {
+  id                String    @id @default(uuid())
+  ownerUserId       String
+  referredUserId    String
+  commissionKobo    Int       @default(0)
+  rewardedAt        DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  owner             User      @relation("ReferralOwner", fields: [ownerUserId], references: [id])
+  referred          User      @relation("ReferralReferred", fields: [referredUserId], references: [id])
+
+  @@unique([ownerUserId, referredUserId])
+  @@index([deletedAt])
+}
+
+model Notification {
+  id                String              @id @default(uuid())
+  userId            String
+  title             String
+  message           String
+  channel           NotificationChannel
+  readAt            DateTime?
+  metadata          Json?
+  deletedAt         DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  user              User                @relation(fields: [userId], references: [id])
+
+  @@index([userId, readAt])
+  @@index([deletedAt])
+}
+
+model SupportTicket {
+  id                String              @id @default(uuid())
+  userId            String
+  subject           String
+  message           String              @db.Text
+  status            SupportTicketStatus @default(OPEN)
+  deletedAt         DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  user              User                @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
+  @@index([deletedAt])
+}
+
+model AuditLog {
+  id                String    @id @default(uuid())
+  userId            String?
+  action            String
+  entityType        String
+  entityId          String
+  metadata          Json?
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User?     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([deletedAt])
+}
+
+model SystemSetting {
+  id                String    @id @default(uuid())
+  key               String    @unique
+  value             Json
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([deletedAt])
+}
+
+model Renewal {
+  id                String    @id @default(uuid())
+  purchaseId        String
+  productId         String
+  amountKobo        Int
+  renewedAt         DateTime?
+  expiresAt         DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  purchase          Purchase  @relation(fields: [purchaseId], references: [id])
+  product           SubscriptionProduct @relation(fields: [productId], references: [id])
+
+  @@index([purchaseId])
+  @@index([productId])
+  @@index([deletedAt])
+}
+
+model ActivityLog {
+  id                String    @id @default(uuid())
+  userId            String
+  activity          String
+  metadata          Json?
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model Session {
+  id                String    @id @default(uuid())
+  userId            String
+  token             String    @unique
+  userAgent         String?
+  ipAddress         String?
+  expiresAt         DateTime
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([deletedAt])
+}
+
+model RefreshToken {
+  id                String    @id @default(uuid())
+  userId            String
+  token             String    @unique
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([deletedAt])
+}
+
+model EmailOTP {
+  id                String    @id @default(uuid())
+  userId            String?
+  provider          String
+  code              String
+  email             String?
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User?     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([provider, expiresAt])
+  @@index([deletedAt])
+}
+
+model BackgroundJob {
+  id                String     @id @default(uuid())
+  name              String
+  queue             String
+  payload           Json
+  status            JobStatus  @default(QUEUED)
+  attempts          Int        @default(0)
+  lastError         String?
+  runAt             DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@index([queue, status])
+  @@index([runAt])
+  @@index([deletedAt])
+}
