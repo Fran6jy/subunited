@@ -9,3 +9,4 @@ dist
 build
 prisma/dev.db
 *.tsbuildinfo
+.vercel

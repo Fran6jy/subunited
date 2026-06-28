@@ -2,6 +2,8 @@
 
 SubUnited is a premium subscription management and digital access marketplace built with Next.js 15, TypeScript, Prisma, PostgreSQL, Redis, and Better Auth.
 
+> Use a patched Next.js 15 release or newer when deploying to production.
+
 ## Phase 1 foundation included
 
 - Next.js 15 App Router scaffold
